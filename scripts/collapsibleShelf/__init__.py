@@ -20,3 +20,4 @@ except ImportError:
 import shelf
 reload(shelf)
 from shelf import install
+from shelf import uninstall

@@ -5,7 +5,7 @@ __email__ =  '820472580@qq.com'
 __date__ = '2020-03-20 11:41:52'
 
 """
-Auto Convert the Maya shelf seperator to a collapsible container
+Auto Convert the Maya shelf separator to a collapsible container
 """
 import json
 
@@ -15,9 +15,16 @@ from Qt import QtWidgets
 
 from maya import cmds
 from maya import mel
+import maya.api.OpenMaya as om
 
 from .util import mayaToQT
-from .seperator import CollapsibleSperator
+from .util import mayaWindow
+from .separator import CollapsibleSperator
+
+global shelf_data
+global container_list
+shelf_data = {}
+container_list = []
 
 def loadShelf(index):
     """loadShelf 
@@ -61,12 +68,7 @@ def loadShelves():
         loadShelf(i)
 
 
-def install():
-    """getShelfButton 
-    
-    Get Command data from Maya Shelf
-    """
-
+def collectShelfData():
     # NOTE 加载所有的工具架
     loadShelves()
 
@@ -76,36 +78,109 @@ def install():
     labels = cmds.shelfTabLayout(gShelfTopLevel,query=1,tl=1)
 
     # NOTE 获取所有的工具架分隔符的信息
-    shelf_data = {}
     for i,[shelf,label] in enumerate(zip(shelves,labels),1):
         # NOTE 获取完整组件名称
         shelf = cmds.shelfLayout(shelf,query=1,fpn=1)
         if not cmds.shelfLayout(shelf,query=1,ca=1):
             print "%s empty child" % shelf
             continue
-        seperator = ""
+        separator = ""
         
         for item in cmds.shelfLayout(shelf,query=1,ca=1):
             if cmds.separator(item,query=1,ex=1):
-                seperator = item
+                separator = item
                 if shelf not in shelf_data:
                     shelf_data[shelf] = {}
-                shelf_data[shelf][seperator] = []
+                shelf_data[shelf][separator] = []
             elif cmds.shelfButton(item,query=1,ex=1):
-                if not seperator :
+                if not separator :
                     continue
-                shelf_data[shelf][seperator].append(item)
+                shelf_data[shelf][separator].append(item)
 
+def uninstall():
+    
+    global shelf_data
+    global container_list
+    for shelf,data in shelf_data.items():
+        shelf = mayaToQT(shelf)
+        for separator,button_list in data.items():
+            cmds.separator(separator,e=1,vis=1)
+            layout = shelf.layout()
+            layout.addWidget(mayaToQT(separator))
+            for i,button in enumerate(button_list,1):
+                button = mayaToQT(button)
+                layout.addWidget(button)
+    
+    for container in container_list:
+        container.deleteLater()
+    container_list = []
+
+def install():
+    """getShelfButton 
+    
+    Get Command data from Maya Shelf
+    """
+    global shelf_data
+    global container_list
+
+    # NOTE 已经安装避免重复安装
+    if container_list:
+        return
+
+    if not shelf_data:
+        collectShelfData()
+
+        # TODO 添加 scriptjob 解决关闭程序保存工具架的问题
+        # om.MEventMessage.addEventCallback('quitApplication',lambda:sys.stdout.write('quit application'))	
+        # cmds.scriptJob( runOnce=True, event=['quitApplication', lambda:sys.stdout.write('quit application')] )
+        # cmds.scriptJob( runOnce=True, event=['quitApplication', uninstall] )
+        
+        # NOTE 监听 Maya 关闭的事件，关闭 Maya 的时候确保切换插件为默认状态
+        quitListener = QuitBinding(mayaWindow(),lambda x:uninstall())
+        
+        # NOTE 添加 menu item 到图标按钮
+        gShelfOptionsButton = mel.eval("$temp = $gShelfOptionsButton")
+        menu_list = cmds.iconTextButton(gShelfOptionsButton,q=1,pma=1)
+        if menu_list:
+            menu = menu_list[0]
+            cmds.menuItem(dividerLabel='collapsibleShelf',divider=True,parent=menu )
+            cmds.menuItem(ecr=0,label='enable', checkBox=not bool(container_list),c=lambda x: uninstall() if container_list else install(),parent=menu)
+            cmds.menuItem(ecr=0,label='update', c=lambda x:collectShelfData(),parent=menu)
+    
     # print "shelf_data",json.dumps(shelf_data)
     for shelf,data in shelf_data.items():
         shelf = mayaToQT(shelf)
-        for seperator,button_list in data.items():
+        for separator,button_list in data.items():
             container = CollapsibleSperator()
+            container_list.append(container)
             layout = shelf.layout()
             layout.addWidget(container)
-            cmds.deleteUI(seperator)
+
+            cmds.separator(separator,e=1,vis=0)
+
+            # NOTE 读取数据
+            tooltip = cmds.separator(separator,q=1,docTag=1)
+            status = cmds.separator(separator,q=1,ann=1)
+            container.bar.setToolTip(tooltip)
+            container.bar.setStatusTip(status)
+            
+            container.container_layout.addWidget(mayaToQT(separator))
             for i,button in enumerate(button_list,1):
                 button = mayaToQT(button)
                 container.container_layout.addWidget(button)
             container.setFixedWidth(i * 40)
 
+
+class QuitBinding(QtCore.QObject):
+    def __init__(self,widget,quitEvent = None):
+        super(QuitBinding,self).__init__()
+        self.setParent(widget)
+        widget.installEventFilter(self)
+        self.quitEvent = quitEvent
+    
+    def eventFilter(self,receiver,event):
+        # NOTE QtCore.QEvent.Type.ChildRemoved = 71
+        # NOTE 确保 Maya 正确退出的时候 uninstall 避免保存错误的工具架
+        if event.type() == 71:
+            if callable(self.quitEvent):
+                self.quitEvent(event)
