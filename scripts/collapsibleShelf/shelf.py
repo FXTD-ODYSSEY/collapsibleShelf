@@ -69,7 +69,7 @@ def loadShelves():
 
 
 def collectShelfData():
-    # NOTE 加载所有的工具架
+    # NOTE 加载所有的工具架 - 默认不加载全部 参考 commandLuancher 插件
     loadShelves()
 
     # NOTE 获取工具架名称
