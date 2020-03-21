@@ -86,4 +86,5 @@ separator
 - [x] 附加选项到 option 按钮
 - [x] tooltip 更加 separator doctag
 - [x] 记录颜色
-- [ ] 将伸缩状态记录到 seperator docTag 组件中
+- [x] 将伸缩状态记录到 seperator enable 中
+- [ ] ~~i18n~~ 感觉没必要大费周章_(:з」∠)_
