@@ -19,6 +19,7 @@ BAR_OPEN_ICON = ":/openBar.png"
 class CollapsibleSperator(QtWidgets.QWidget):
     toggle = False
     child_width = 0
+    color = None
     def __init__(self,parent=None,duration=200,tooltip=""):
         super(CollapsibleSperator,self).__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
@@ -28,9 +29,9 @@ class CollapsibleSperator(QtWidgets.QWidget):
         self.bar = QtWidgets.QPushButton()
         self.bar.setFlat(True)
         self.bar.setFixedWidth(8)
-        self.bar.setFixedHeight(40)   
+        self.bar.setFixedHeight(35)   
         self.bar.setIcon(QtGui.QPixmap(BAR_OPEN_ICON))
-        self.bar.setIconSize(QtCore.QSize(8,40))
+        self.bar.setIconSize(QtCore.QSize(8,35))
         self.bar.released.connect(self.switch)
 
         self.container = QtWidgets.QWidget()
@@ -85,11 +86,41 @@ class CollapsibleSperator(QtWidgets.QWidget):
             self.anim2.setEndValue(self.child_width)
             self.anim2.start()
 
+        self._setColor()
         self.setFixedWidth(8)
         self.toggle = not self.toggle
+    
+    def setButtonColor(self,color=QtGui.QColor("red")):
+        """setButtonColor set SVG Icon Color
+        # NOTE https://stackoverflow.com/questions/53107173/change-color-png-image-qpushbutton
+        Parameters
+        ----------
+        button : QPushButton
+            Icon Button
+        color : QColor, optional
+            set the Icon color, by default QtGui.QColor("red")
+        """
+        self.color = color
+        self._setColor()
+
+    def _setColor(self):
+        if not self.color:
+            return
+        icon = self.bar.icon()
+        pixmap = icon.pixmap(35)
+        image = pixmap.toImage()
+        pcolor = image.pixelColor(8,35)
+        for x in range(image.width()):
+            for y in range(image.height()):
+                pcolor = image.pixelColor(x, y)
+                if pcolor.alpha() > 0:
+                    self.color.setAlpha(pcolor.alpha())
+                    image.setPixelColor(x, y, self.color)
+        self.bar.setIcon(QtGui.QIcon(QtGui.QPixmap.fromImage(image)))
 
 
 if __name__ == "__main__":
     widget = CollapsibleSperator()
     widget.show()
+    widget.setButtonColor(QtGui.QColor("rgb(0,255,0)"))
    

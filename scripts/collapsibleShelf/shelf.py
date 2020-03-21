@@ -26,6 +26,7 @@ global container_list
 shelf_data = {}
 container_list = []
 
+   
 def loadShelf(index):
     """loadShelf 
     
@@ -130,21 +131,22 @@ def install():
     if not shelf_data:
         collectShelfData()
 
-        # TODO 添加 scriptjob 解决关闭程序保存工具架的问题
-        # om.MEventMessage.addEventCallback('quitApplication',lambda:sys.stdout.write('quit application'))	
-        # cmds.scriptJob( runOnce=True, event=['quitApplication', lambda:sys.stdout.write('quit application')] )
-        # cmds.scriptJob( runOnce=True, event=['quitApplication', uninstall] )
-        
         # NOTE 监听 Maya 关闭的事件，关闭 Maya 的时候确保切换插件为默认状态
-        quitListener = QuitBinding(mayaWindow(),lambda x:uninstall())
+        QuitBinding(mayaWindow(),lambda x:uninstall())
         
         # NOTE 添加 menu item 到图标按钮
-        gShelfOptionsButton = mel.eval("$temp = $gShelfOptionsButton")
+        # gShelfOptionsButton = mel.eval("$temp = $gShelfOptionsButton")
+        gShelfForm = mel.eval("$temp = $gShelfForm")
+        option = cmds.formLayout(gShelfForm,q=1,ca=1)[0]
+        frame = cmds.formLayout(option,q=1,ca=1)[0]
+        form = cmds.frameLayout(frame,q=1,ca=1)[0]
+        gShelfOptionsButton = cmds.formLayout(form,q=1,ca=1)[1]
+
         menu_list = cmds.iconTextButton(gShelfOptionsButton,q=1,pma=1)
         if menu_list:
             menu = menu_list[0]
-            cmds.menuItem(dividerLabel='collapsibleShelf',divider=True,parent=menu )
-            cmds.menuItem(ecr=0,label='enable', checkBox=not bool(container_list),c=lambda x: uninstall() if container_list else install(),parent=menu)
+            cmds.menuItem(dividerLabel='CollapsibleShelf',divider=True,parent=menu )
+            cmds.menuItem(ecr=0,label='enable', checkBox=True,c=lambda x: uninstall() if container_list else install(),parent=menu)
             cmds.menuItem(ecr=0,label='update', c=lambda x:collectShelfData(),parent=menu)
     
     # print "shelf_data",json.dumps(shelf_data)
@@ -159,16 +161,25 @@ def install():
             cmds.separator(separator,e=1,vis=0)
 
             # NOTE 读取数据
-            tooltip = cmds.separator(separator,q=1,docTag=1)
-            status = cmds.separator(separator,q=1,ann=1)
-            container.bar.setToolTip(tooltip)
-            container.bar.setStatusTip(status)
-            
+            try:
+                tooltip,colors = cmds.separator(separator,q=1,docTag=1).split(";")
+                if "," in colors:
+                    container.setButtonColor(QtGui.QColor(*[float(digit) for digit in colors.split(",")[:3]]))
+                elif colors:
+                    container.setButtonColor(QtGui.QColor(colors))
+            except:
+                tooltip = cmds.separator(separator,q=1,docTag=1)
+
+            status = cmds.separator(separator,q=1,annotation=1)
+
+            container.setToolTip(tooltip)
+            container.setStatusTip(status)
+
             container.container_layout.addWidget(mayaToQT(separator))
             for i,button in enumerate(button_list,1):
                 button = mayaToQT(button)
                 container.container_layout.addWidget(button)
-            container.setFixedWidth(i * 40)
+            container.setFixedWidth(8 + i * 35)
 
 
 class QuitBinding(QtCore.QObject):
@@ -184,3 +195,5 @@ class QuitBinding(QtCore.QObject):
         if event.type() == 71:
             if callable(self.quitEvent):
                 self.quitEvent(event)
+        
+        return False
