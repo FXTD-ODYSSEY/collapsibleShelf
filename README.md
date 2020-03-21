@@ -21,6 +21,7 @@ After installation, all separator on the shelf are automatically switched to Col
 ![alt](img/02.png)
 
 The properties of the icon cannot be modified properly after the separator switch, so I added the option to restore the original
+In addition, quitting the software auto-save shelf will cause all the icons of the Collapsable Separator to be lost if you don't return to the original, but don't worry, I have already monitored the exit event to make sure that the shelf is restored and saved when you exit the program.
 
 ![alt](img/03.png)
 
