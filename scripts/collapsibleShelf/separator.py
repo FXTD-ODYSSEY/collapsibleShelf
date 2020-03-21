@@ -12,7 +12,7 @@ from Qt import QtGui
 from Qt import QtCore
 from Qt import QtWidgets
 
-
+from maya import cmds
 BAR_CLOSE_ICON = ":/closeBar.png"
 BAR_OPEN_ICON = ":/openBar.png"
 
@@ -20,11 +20,11 @@ class CollapsibleSperator(QtWidgets.QWidget):
     toggle = False
     child_width = 0
     color = None
-    def __init__(self,parent=None,duration=200,tooltip=""):
+    def __init__(self,parent=None,duration=200,separator=""):
         super(CollapsibleSperator,self).__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
-        self.setToolTip(tooltip)
-
+        self.separator = separator
+        
         # create bar
         self.bar = QtWidgets.QPushButton()
         self.bar.setFlat(True)
@@ -65,6 +65,7 @@ class CollapsibleSperator(QtWidgets.QWidget):
         """
         
         if self.toggle:
+            cmds.separator(self.separator,e=1,en=1)
             self.bar.setIcon(QtGui.QPixmap(BAR_OPEN_ICON))
 
             self.anim.setDirection(QtCore.QAbstractAnimation.Forward)
@@ -74,7 +75,9 @@ class CollapsibleSperator(QtWidgets.QWidget):
             self.anim2.setDirection(QtCore.QAbstractAnimation.Forward)
             self.anim2.setEndValue(self.child_width)
             self.anim2.start()
+            
         else:
+            cmds.separator(self.separator,e=1,en=0)
             self.bar.setIcon(QtGui.QPixmap(BAR_CLOSE_ICON))
             self.child_width = self.width()
 

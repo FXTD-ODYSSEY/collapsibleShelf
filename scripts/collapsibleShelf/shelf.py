@@ -140,7 +140,7 @@ def install():
 
         # NOTE 监听 Maya 关闭的事件，关闭 Maya 的时候确保切换插件为默认状态
         # QuitBinding(mayaWindow(),lambda x:uninstall())
-        QtWidgets.QApplication.aboutToQuit.connect(lambda:uninstall(True))
+        QtWidgets.QApplication.instance().aboutToQuit.connect(lambda:uninstall(True))
 
         # NOTE 添加 menu item 到图标按钮
         # gShelfOptionsButton = mel.eval("$temp = $gShelfOptionsButton")
@@ -161,7 +161,7 @@ def install():
     for shelf,data in shelf_data.items():
         shelf = mayaToQT(shelf)
         for separator,button_list in data.items():
-            container = CollapsibleSperator()
+            container = CollapsibleSperator(separator=separator)
             container_list.append(container)
             layout = shelf.layout()
             layout.addWidget(container)
@@ -170,7 +170,7 @@ def install():
 
             # NOTE 读取数据
             try:
-                tooltip,colors = cmds.separator(separator,q=1,docTag=1).split(";")
+                tooltip,colors = cmds.separator(separator,q=1,docTag=1).split(";;")
                 if "," in colors:
                     container.setButtonColor(QtGui.QColor(*[float(digit) for digit in colors.split(",")[:3]]))
                 elif colors:
@@ -188,6 +188,10 @@ def install():
                 button = mayaToQT(button)
                 container.container_layout.addWidget(button)
             container.setFixedWidth(8 + i * 35)
+
+            # NOTE 设置伸缩状态
+            if not cmds.separator(separator,q=1,enable=1):
+                container.switch()
 
 
 # class QuitBinding(QtCore.QObject):

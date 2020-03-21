@@ -45,15 +45,16 @@ You can add separator, separator parameters by modifying the script to refer to 
 
 I have also added some special parameters to the parameters of separator to make the Collapsable Separator controllable.   
 
--docTag parameter passing string like "{tooltip};{color}" , then the first string set the Collapsable button tooltip and the second string set the color.    
+-docTag parameter passing string like "{tooltip};;{color}" , then the first string set the Collapsable button tooltip and the second string set the color.    
 -annotation parameter directly sets the status display below
+-enable store the Collapsable state
 
 example:
 
 ```mel
 separator
-    -enable 1
-    -docTag "tooltip example;red" // The button displays "tooltip example" and appears red-color characters refer to the colors supported by the css stylesheet 
+    -enable 1 // store the Collapsable state
+    -docTag "tooltip example;;red" // The button displays "tooltip example" and appears red-color characters refer to the colors supported by the css stylesheet 
     -annotation "status example" // The status bar below displays "status example"
     -width 34
     -height 35
@@ -68,7 +69,7 @@ separator
 
 separator
     -enable 1
-    -docTag "tooltip example;0,255,0" // The color can also be represented by a three-digit number from 0 to 255.
+    -docTag "tooltip example;;0,255,0" // The color can also be represented by a three-digit number from 0 to 255.
     -width 34
     -height 35
     -manage 1
