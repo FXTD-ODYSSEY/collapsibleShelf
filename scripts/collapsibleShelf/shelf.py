@@ -98,10 +98,14 @@ def collectShelfData():
                     continue
                 shelf_data[shelf][separator].append(item)
 
-def uninstall():
+def uninstall(save=False):
     
     global shelf_data
     global container_list
+    # NOTE 已经卸载就无须继续执行
+    if not container_list:
+        return
+
     for shelf,data in shelf_data.items():
         shelf = mayaToQT(shelf)
         for separator,button_list in data.items():
@@ -115,6 +119,9 @@ def uninstall():
     for container in container_list:
         container.deleteLater()
     container_list = []
+
+    if save:
+        mel.eval('saveAllShelves $gShelfTopLevel;')
 
 def install():
     """getShelfButton 
@@ -132,8 +139,9 @@ def install():
         collectShelfData()
 
         # NOTE 监听 Maya 关闭的事件，关闭 Maya 的时候确保切换插件为默认状态
-        QuitBinding(mayaWindow(),lambda x:uninstall())
-        
+        # QuitBinding(mayaWindow(),lambda x:uninstall())
+        QtWidgets.QApplication.aboutToQuit.connect(lambda:uninstall(True))
+
         # NOTE 添加 menu item 到图标按钮
         # gShelfOptionsButton = mel.eval("$temp = $gShelfOptionsButton")
         gShelfForm = mel.eval("$temp = $gShelfForm")
@@ -182,18 +190,18 @@ def install():
             container.setFixedWidth(8 + i * 35)
 
 
-class QuitBinding(QtCore.QObject):
-    def __init__(self,widget,quitEvent = None):
-        super(QuitBinding,self).__init__()
-        self.setParent(widget)
-        widget.installEventFilter(self)
-        self.quitEvent = quitEvent
+# class QuitBinding(QtCore.QObject):
+#     def __init__(self,widget,quitEvent = None):
+#         super(QuitBinding,self).__init__()
+#         self.setParent(widget)
+#         widget.installEventFilter(self)
+#         self.quitEvent = quitEvent
     
-    def eventFilter(self,receiver,event):
-        # NOTE QtCore.QEvent.Type.ChildRemoved = 71
-        # NOTE 确保 Maya 正确退出的时候 uninstall 避免保存错误的工具架
-        if event.type() == 71:
-            if callable(self.quitEvent):
-                self.quitEvent(event)
+#     def eventFilter(self,receiver,event):
+#         # NOTE QtCore.QEvent.Type.ChildRemoved = 71
+#         # NOTE 确保 Maya 正确退出的时候 uninstall 避免保存错误的工具架
+#         if event.type() == 71:
+#             if callable(self.quitEvent):
+#                 self.quitEvent(event)
         
-        return False
+#         return False
