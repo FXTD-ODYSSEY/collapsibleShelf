@@ -45,7 +45,7 @@ def loadShelf(index):
         shelfFile=cmds.optionVar(q=shelfFileNum)
         if shelfFile and mel.eval("exists %s"%shelfFile):
             cmds.setParent(shelfName)
-            shelfVersion=""
+            shelfVersion = ""
             try:
                 shelfVersion = mel.eval("eval %s"%shelfFile)
             except:
@@ -69,6 +69,42 @@ def loadShelves():
         loadShelf(i)
 
 
+class DraggableHandler(QtCore.QObject):
+    # NOTE https://stackoverflow.com/questions/12219727/
+    __mousePressPos = None
+    __mouseMovePos = None
+
+    def __init__(self,widget):
+        super(DraggableHandler,self).__init__()
+        self.setParent(widget)
+        widget.installEventFilter(self)
+
+    def eventFilter(self, receiver , event):
+        if event.type() == QtCore.QEvent.MouseButtonPress:
+            print "MouseButtonPress"
+            if event.button() == QtCore.Qt.LeftButton:
+                self.__mousePressPos = event.globalPos()
+                self.__mouseMovePos = event.globalPos()
+
+        elif event.type() == QtCore.QEvent.MouseMove:
+            print "MouseMove"
+            if event.buttons() == QtCore.Qt.LeftButton:
+                # adjust offset from clicked point to origin of widget
+                currPos = receiver.mapToGlobal(receiver.pos())
+                globalPos = event.globalPos()
+                diff = globalPos - self.__mouseMovePos
+                newPos = receiver.mapFromGlobal(currPos + diff)
+                # receiver.move(newPos)
+
+                self.__mouseMovePos = globalPos
+
+        elif event.type() == QtCore.QEvent.MouseButtonRelease:
+            print "DragLeave"
+            if self.__mousePressPos is not None:
+                moved = event.globalPos() - self.__mousePressPos 
+                if moved.manhattanLength() > 3:
+                    event.ignore()
+                    return
 def collectShelfData():
     # NOTE 加载所有的工具架 - 默认不加载全部 参考 commandLuancher 插件
     loadShelves()
@@ -83,7 +119,7 @@ def collectShelfData():
         # NOTE 获取完整组件名称
         shelf = cmds.shelfLayout(shelf,query=1,fpn=1)
         if not cmds.shelfLayout(shelf,query=1,ca=1):
-            print "%s empty child" % shelf
+            print "[collapsibleShelf] %s empty child" % shelf
             continue
         separator = ""
         
@@ -94,6 +130,8 @@ def collectShelfData():
                     shelf_data[shelf] = {}
                 shelf_data[shelf][separator] = []
             elif cmds.shelfButton(item,query=1,ex=1):
+                print item,mayaToQT(item)
+                DraggableHandler(mayaToQT(item))
                 if not separator :
                     continue
                 shelf_data[shelf][separator].append(item)

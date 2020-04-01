@@ -87,4 +87,6 @@ separator
 - [x] tooltip 更加 separator doctag
 - [x] 记录颜色
 - [x] 将伸缩状态记录到 seperator enable 中
+- [ ] icon 任意位置拖拽
+- [ ] 解决右键编辑出错问题
 - [ ] ~~i18n~~ 感觉没必要大费周章_(:з」∠)_
