@@ -1,3 +1,7 @@
+# OBSELETE
+
+Please dont't use this tool, It may crash your Maya shelf data sometimes, I recommand a better shelf tool [SiShelf](https://github.com/mochio326/SiShelf)
+
 # CollapsableShelf
 
 Maya Shelf Collapsable Separator | auto convert the mel separator for better user experience
